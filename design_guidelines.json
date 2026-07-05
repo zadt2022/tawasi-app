@@ -1,0 +1,93 @@
+{
+  "theme": "light",
+  "archetype": "1 (Organic & Earthy)",
+  "direction": "rtl",
+  "typography": {
+    "font_family": {
+      "heading": "Tajawal, sans-serif",
+      "body": "Tajawal, sans-serif"
+    },
+    "font_weights": {
+      "light": 300,
+      "regular": 400,
+      "medium": 500,
+      "bold": 700
+    },
+    "sizes": {
+      "h1": "text-4xl sm:text-5xl tracking-tight font-bold",
+      "h2": "text-2xl sm:text-3xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl font-medium",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm",
+      "tiny_label": "text-xs tracking-[0.05em] uppercase"
+    }
+  },
+  "colors": {
+    "background": "#FBFBF9",
+    "surface": "#FFFFFF",
+    "primary": "#2A5C43",
+    "primary_hover": "#1E4230",
+    "secondary": "#D4A373",
+    "accent": "#8A9A5B",
+    "text_primary": "#1C1917",
+    "text_secondary": "#57534E",
+    "border": "#E7E5E4",
+    "success": "#34D399",
+    "warning": "#FBBF24",
+    "danger": "#F87171",
+    "charts": ["#2A5C43", "#D4A373", "#8A9A5B", "#E6CCB2", "#7E6B5A"]
+  },
+  "spacing_and_layout": {
+    "general": "Generous spacing philosophy (p-6, p-8). Container padding p-6 or p-8 to prevent text collision.",
+    "dashboard_grid": "Bento Grid protocol (Control Room mode for dashboard). Base grid: grid-cols-1 md:grid-cols-3 lg:grid-cols-4 with gap-6.",
+    "sidebar": "Fixed width 260px on the right (RTL). Content gets padding-right 260px on desktop.",
+    "alignment": "RTL context: Right-align text by default, ensure flex flows logically (Tailwind handles dir='rtl' automatically for logical properties like ms, me, ps, pe, items-start)."
+  },
+  "components": {
+    "buttons": "Shadcn buttons. Use primary color for main CTA. Solid background, rounded-md, text-sm font-medium.",
+    "cards": "Flat background, 1px subtle border (#E7E5E4), soft shadow-sm. Nested radii. Padding p-6.",
+    "tables": "Shadcn tables. Right-aligned columns for text in RTL context. Interactive row hover states.",
+    "forms": "Shadcn forms with Input, Select. Labels right-aligned. Required indicator (asterisk) to the left of the text.",
+    "charts": "Recharts. Use provided chart color palette. Tooltips must have rtl direction.",
+    "dialogs": "Glassmorphism or solid overlay (bg-black/40 backdrop-blur-sm). Modal surface solid white with rounded-lg.",
+    "tabs": "Shadcn tabs, custom h-auto instead of fixed h-9. Active state primary color text."
+  },
+  "motion_and_interaction": {
+    "hover_states": "Buttons and links must change background or text color explicitly. Table rows bg-stone-50 on hover.",
+    "transitions": "transition-all duration-200 ease-in-out.",
+    "focus_states": "focus:ring-2 focus:ring-primary/50 focus:outline-none focus:ring-offset-1."
+  },
+  "accessibility": {
+    "contrast": "Ensure minimum 4.5:1 ratio for text. Primary color #2A5C43 on white is accessible.",
+    "data_testid": "MANDATORY. All interactive elements (buttons, inputs, tabs, dropdowns, table rows) must have data-testid in kebab-case."
+  },
+  "media": {
+    "images": [
+      {
+        "category": "login_background",
+        "url": "https://images.pexels.com/photos/34256958/pexels-photo-34256958.jpeg",
+        "description": "Islamic geometric pattern, excellent for an educational/training app login page."
+      },
+      {
+        "category": "dashboard_header_bg",
+        "url": "https://images.pexels.com/photos/401080/pexels-photo-401080.jpeg",
+        "description": "Calm nature forest sunrise, good for a welcoming banner on the dashboard."
+      }
+    ],
+    "icons_library": "lucide-react"
+  },
+  "instructions_to_main_agent": [
+    "Strictly enforce RTL by setting dir='rtl' on the root HTML tag or main container in index.html and layouts.",
+    "Use logical CSS properties (ps, pe, ms, me, border-s, border-e) instead of left/right (pl, pr, ml, mr) to ensure RTL compatibility.",
+    "Implement the 'Organic & Earthy' color palette for all UI elements. Use primary #2A5C43.",
+    "Use Shadcn UI components customized for RTL and the chosen color scheme.",
+    "Build a responsive layout with a right sidebar for navigation and a main content area.",
+    "Create interactive dashboard charts using Recharts, ensuring they handle Arabic text properly.",
+    "Ensure print-friendly styles for the reports pages (@media print). Hide sidebar and navigation during print.",
+    "All React files MUST be .js (not .tsx) as per the project requirements.",
+    "Include data-testid on every interactive element (buttons, inputs, links, tabs).",
+    "Do NOT use 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Syne' fonts. Use 'Tajawal' from Google Fonts and import it in index.css.",
+    "Use 'lucide-react' for icons, but ensure any directional icons (like arrows) are mirrored for RTL."
+  ]
+}
