@@ -12,7 +12,13 @@ import {
     BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line,
 } from "recharts";
-import { Printer, Download, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Printer, Download, CheckCircle2, XCircle, Clock, CalendarRange } from "lucide-react";
+
+const HIJRI_MONTH_NAMES = [
+    "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
+    "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
+];
+const HIJRI_YEARS = [47, 48, 49, 50, 51, 52];
 
 const COLORS = ["#2A5C43", "#D4A373", "#8A9A5B", "#E6CCB2", "#7E6B5A"];
 
@@ -22,6 +28,9 @@ export default function Reports() {
     const [data, setData] = useState(null);
     const [months, setMonths] = useState([]);
     const [monthDetail, setMonthDetail] = useState(null);
+    const [yearOpen, setYearOpen] = useState(false);
+    const [yearSel, setYearSel] = useState(48);
+    const [yearData, setYearData] = useState(null);
 
     const load = async () => {
         const g = await api.get("/groups");
@@ -37,6 +46,25 @@ export default function Reports() {
         const r = await api.get(`/reports/by-month?month=${encodeURIComponent(month)}`);
         setMonthDetail(r.data);
     };
+
+    const openYearSummary = async () => {
+        setYearOpen(true);
+        const rows = [];
+        for (const name of HIJRI_MONTH_NAMES) {
+            const m = `${name}${yearSel}`;
+            const r = await api.get(`/reports/by-month?month=${encodeURIComponent(m)}`);
+            rows.push({ month: m, name, ...r.data });
+        }
+        setYearData(rows);
+    };
+
+    useEffect(() => {
+        if (yearOpen) {
+            setYearData(null);
+            openYearSummary();
+        }
+        // eslint-disable-next-line
+    }, [yearSel]);
 
     useEffect(() => { load(); /* eslint-disable-next-line */ }, [groupId]);
 
@@ -76,6 +104,7 @@ export default function Reports() {
                         </SelectContent>
                     </Select>
                     <Button variant="outline" onClick={() => window.print()} data-testid="print-report-btn"><Printer className="w-4 h-4 ms-2" /> طباعة PDF</Button>
+                    <Button variant="outline" onClick={openYearSummary} data-testid="year-summary-btn"><CalendarRange className="w-4 h-4 ms-2" /> ملخص السنة الهجرية</Button>
                     <Button onClick={download} data-testid="export-csv-btn"><Download className="w-4 h-4 ms-2" /> تصدير Excel</Button>
                 </div>
             </div>
@@ -189,6 +218,57 @@ export default function Reports() {
                                     )}
                                 </div>
                             ))}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={yearOpen} onOpenChange={setYearOpen}>
+                <DialogContent dir="rtl" className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-4">
+                            <span>ملخص السنة الهجرية 14{yearSel}هـ</span>
+                            <Select value={String(yearSel)} onValueChange={(v) => setYearSel(Number(v))}>
+                                <SelectTrigger className="w-32" data-testid="year-summary-select"><SelectValue /></SelectTrigger>
+                                <SelectContent>{HIJRI_YEARS.map((y) => <SelectItem key={y} value={String(y)}>14{y}هـ</SelectItem>)}</SelectContent>
+                            </Select>
+                            <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="w-4 h-4 ms-1" /> طباعة</Button>
+                        </DialogTitle>
+                    </DialogHeader>
+                    {!yearData ? (
+                        <div className="text-center py-8 text-muted-foreground">جارٍ التحميل...</div>
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-sm border-collapse" data-testid="year-summary-table">
+                                <thead>
+                                    <tr className="border-b">
+                                        <th className="text-right p-2 font-bold sticky right-0 bg-white">الشهر</th>
+                                        {(yearData[0]?.groups || []).map((g) => (
+                                            <th key={g.group_id} className="text-center p-2 font-bold min-w-[110px]">{g.group_name}</th>
+                                        ))}
+                                        <th className="text-center p-2 font-bold">الإنجاز</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {yearData.map((row) => {
+                                        const done = row.groups.filter((g) => g.status === "executed").length;
+                                        const total = row.groups.length;
+                                        return (
+                                            <tr key={row.month} className="border-b hover:bg-muted/30">
+                                                <td className="p-2 font-medium sticky right-0 bg-white">{row.name}</td>
+                                                {row.groups.map((g) => (
+                                                    <td key={g.group_id} className="text-center p-2">
+                                                        {g.status === "executed" ? <span className="inline-block px-2 py-1 rounded bg-primary/15 text-primary text-xs">نفّذت</span>
+                                                            : g.status === "planned" ? <span className="inline-block px-2 py-1 rounded bg-yellow-100 text-yellow-800 text-xs">مخطط</span>
+                                                                : <span className="inline-block px-2 py-1 rounded bg-destructive/10 text-destructive text-xs">—</span>}
+                                                    </td>
+                                                ))}
+                                                <td className="text-center p-2 font-medium">{done}/{total}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </DialogContent>

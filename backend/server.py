@@ -202,6 +202,7 @@ class MeetingIn(BaseModel):
     group_id: str
     title: str
     hijri_month: Optional[str] = ""  # مثال: "محرم48"
+    hijri_day: Optional[int] = None
     day_of_week: Optional[str] = ""
     date_hijri: Optional[str] = ""
     date_gregorian: Optional[str] = ""  # ISO date string

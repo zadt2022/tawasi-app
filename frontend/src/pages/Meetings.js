@@ -26,21 +26,37 @@ const HIJRI_MONTH_NAMES = [
     "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
     "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
 ];
+const HIJRI_YEARS = [47, 48, 49, 50, 51, 52];
+const HIJRI_DAYS = Array.from({ length: 30 }, (_, i) => i + 1);
 // Generate months for years 1447h..1452h (5 years). Format: "محرم47", "صفر47"...
 const HIJRI_MONTHS = (() => {
     const out = [];
-    for (let year = 47; year <= 52; year++) {
+    for (const year of HIJRI_YEARS) {
         for (const name of HIJRI_MONTH_NAMES) out.push(`${name}${year}`);
     }
     return out;
 })();
 
 const emptyForm = {
-    group_id: "", title: "", hijri_month: "", day_of_week: "", date_hijri: "", date_gregorian: "",
+    group_id: "", title: "", hijri_month: "", hijri_day: "", day_of_week: "", date_hijri: "", date_gregorian: "",
     location: "", presenter: "", presentation_type: "", presentation_type_other: "",
     domain_id: "", competency_id: "", criterion_ids: [],
     executed: false, materials_link: "", notes: "",
 };
+
+// Parse "محرم48" → { name: "محرم", year: 48 }
+function parseHijriMonth(hm) {
+    if (!hm) return { name: "", year: "" };
+    const m = HIJRI_MONTH_NAMES.find((n) => hm.startsWith(n));
+    if (!m) return { name: "", year: "" };
+    return { name: m, year: hm.slice(m.length) };
+}
+function composeHijri(day, name, year) {
+    if (!name || !year) return { hijri_month: "", date_hijri: "" };
+    const hijri_month = `${name}${year}`;
+    const date_hijri = day ? `${day} ${name} 14${year}هـ` : `${name} 14${year}هـ`;
+    return { hijri_month, date_hijri };
+}
 
 export default function Meetings() {
     const { canEdit } = useAuth();
@@ -74,6 +90,7 @@ export default function Meetings() {
         setEditing(m);
         setForm({
             group_id: m.group_id, title: m.title, hijri_month: m.hijri_month || "",
+            hijri_day: m.hijri_day || "",
             day_of_week: m.day_of_week || "",
             date_hijri: m.date_hijri || "", date_gregorian: m.date_gregorian || "",
             location: m.location || "", presenter: m.presenter || "",
@@ -215,15 +232,49 @@ export default function Meetings() {
                                 <SelectContent>{groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
-                        <div className="space-y-2">
-                            <Label>الشهر الهجري</Label>
-                            <Select value={form.hijri_month || "none"} onValueChange={(v) => setForm({ ...form, hijri_month: v === "none" ? "" : v })}>
-                                <SelectTrigger data-testid="meeting-hijri-month-select"><SelectValue placeholder="اختر الشهر" /></SelectTrigger>
-                                <SelectContent className="max-h-72">
-                                    <SelectItem value="none">—</SelectItem>
-                                    {HIJRI_MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                        <div className="space-y-2 md:col-span-2">
+                            <Label>التاريخ الهجري</Label>
+                            <div className="grid grid-cols-3 gap-2">
+                                <Select value={String(form.hijri_day || "none")} onValueChange={(v) => {
+                                    const day = v === "none" ? "" : v;
+                                    const { name, year } = parseHijriMonth(form.hijri_month);
+                                    const composed = composeHijri(day, name, year);
+                                    setForm({ ...form, hijri_day: day, ...composed });
+                                }}>
+                                    <SelectTrigger data-testid="meeting-hijri-day-select"><SelectValue placeholder="اليوم" /></SelectTrigger>
+                                    <SelectContent className="max-h-72">
+                                        <SelectItem value="none">—</SelectItem>
+                                        {HIJRI_DAYS.map((d) => <SelectItem key={d} value={String(d)}>{d}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={parseHijriMonth(form.hijri_month).name || "none"} onValueChange={(v) => {
+                                    const name = v === "none" ? "" : v;
+                                    const year = parseHijriMonth(form.hijri_month).year;
+                                    const composed = composeHijri(form.hijri_day, name, year);
+                                    setForm({ ...form, ...composed });
+                                }}>
+                                    <SelectTrigger data-testid="meeting-hijri-month-name-select"><SelectValue placeholder="الشهر" /></SelectTrigger>
+                                    <SelectContent className="max-h-72">
+                                        <SelectItem value="none">—</SelectItem>
+                                        {HIJRI_MONTH_NAMES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={String(parseHijriMonth(form.hijri_month).year || "none")} onValueChange={(v) => {
+                                    const year = v === "none" ? "" : v;
+                                    const name = parseHijriMonth(form.hijri_month).name;
+                                    const composed = composeHijri(form.hijri_day, name, year);
+                                    setForm({ ...form, ...composed });
+                                }}>
+                                    <SelectTrigger data-testid="meeting-hijri-year-select"><SelectValue placeholder="السنة" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">—</SelectItem>
+                                        {HIJRI_YEARS.map((y) => <SelectItem key={y} value={String(y)}>14{y}هـ</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {form.date_hijri && (
+                                <div className="text-xs text-muted-foreground">التاريخ: {form.date_hijri}</div>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <Label>اليوم</Label>
@@ -234,10 +285,6 @@ export default function Meetings() {
                                     {DAYS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>التاريخ الهجري</Label>
-                            <Input value={form.date_hijri} placeholder="20/1/1447هـ" onChange={(e) => setForm({ ...form, date_hijri: e.target.value })} />
                         </div>
                         <div className="space-y-2">
                             <Label>التاريخ الميلادي</Label>
