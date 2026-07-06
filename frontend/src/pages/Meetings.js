@@ -21,11 +21,23 @@ import { toast } from "sonner";
 import { Plus, Trash2, Pencil, ExternalLink } from "lucide-react";
 
 const DAYS = ["الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-const PRESENTATION_TYPES = ["محاضرة", "ورشة", "درس", "نقاش", "قصة", "استضافة"];
+const PRESENTATION_TYPES = ["محاضرة", "ورشة", "درس", "نقاش", "قصة", "استضافة", "أخرى"];
+const HIJRI_MONTH_NAMES = [
+    "محرم", "صفر", "ربيع الأول", "ربيع الآخر", "جمادى الأولى", "جمادى الآخرة",
+    "رجب", "شعبان", "رمضان", "شوال", "ذو القعدة", "ذو الحجة",
+];
+// Generate months for years 1447h..1452h (5 years). Format: "محرم47", "صفر47"...
+const HIJRI_MONTHS = (() => {
+    const out = [];
+    for (let year = 47; year <= 52; year++) {
+        for (const name of HIJRI_MONTH_NAMES) out.push(`${name}${year}`);
+    }
+    return out;
+})();
 
 const emptyForm = {
-    group_id: "", title: "", day_of_week: "", date_hijri: "", date_gregorian: "",
-    location: "", presenter: "", presentation_type: "",
+    group_id: "", title: "", hijri_month: "", day_of_week: "", date_hijri: "", date_gregorian: "",
+    location: "", presenter: "", presentation_type: "", presentation_type_other: "",
     domain_id: "", competency_id: "", criterion_ids: [],
     executed: false, materials_link: "", notes: "",
 };
@@ -61,10 +73,12 @@ export default function Meetings() {
     const openEdit = (m) => {
         setEditing(m);
         setForm({
-            group_id: m.group_id, title: m.title, day_of_week: m.day_of_week || "",
+            group_id: m.group_id, title: m.title, hijri_month: m.hijri_month || "",
+            day_of_week: m.day_of_week || "",
             date_hijri: m.date_hijri || "", date_gregorian: m.date_gregorian || "",
             location: m.location || "", presenter: m.presenter || "",
             presentation_type: m.presentation_type || "",
+            presentation_type_other: m.presentation_type_other || "",
             domain_id: m.domain_id || "", competency_id: m.competency_id || "",
             criterion_ids: m.criterion_ids || [],
             executed: !!m.executed, materials_link: m.materials_link || "", notes: m.notes || "",
@@ -133,6 +147,7 @@ export default function Meetings() {
                                 <TableRow>
                                     <TableHead className="text-right">العنوان</TableHead>
                                     <TableHead className="text-right">المجموعة</TableHead>
+                                    <TableHead className="text-right">الشهر</TableHead>
                                     <TableHead className="text-right">اليوم</TableHead>
                                     <TableHead className="text-right">هجري</TableHead>
                                     <TableHead className="text-right">ميلادي</TableHead>
@@ -151,12 +166,13 @@ export default function Meetings() {
                                             <Link to={`/meetings/${m.id}`} className="text-primary hover:underline">{m.title}</Link>
                                         </TableCell>
                                         <TableCell>{gmap[m.group_id]}</TableCell>
+                                        <TableCell>{m.hijri_month || "—"}</TableCell>
                                         <TableCell>{m.day_of_week}</TableCell>
                                         <TableCell>{m.date_hijri}</TableCell>
                                         <TableCell dir="ltr" className="text-right">{m.date_gregorian}</TableCell>
                                         <TableCell>{m.location}</TableCell>
                                         <TableCell>{m.presenter}</TableCell>
-                                        <TableCell>{m.presentation_type}</TableCell>
+                                        <TableCell>{m.presentation_type === "أخرى" ? (m.presentation_type_other || "أخرى") : m.presentation_type}</TableCell>
                                         <TableCell>{m.attendance_count || 0}</TableCell>
                                         <TableCell>
                                             {m.executed
@@ -197,6 +213,16 @@ export default function Meetings() {
                             <Select value={form.group_id} onValueChange={(v) => setForm({ ...form, group_id: v })}>
                                 <SelectTrigger data-testid="meeting-group-select"><SelectValue placeholder="اختر" /></SelectTrigger>
                                 <SelectContent>{groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>الشهر الهجري</Label>
+                            <Select value={form.hijri_month || "none"} onValueChange={(v) => setForm({ ...form, hijri_month: v === "none" ? "" : v })}>
+                                <SelectTrigger data-testid="meeting-hijri-month-select"><SelectValue placeholder="اختر الشهر" /></SelectTrigger>
+                                <SelectContent className="max-h-72">
+                                    <SelectItem value="none">—</SelectItem>
+                                    {HIJRI_MONTHS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">

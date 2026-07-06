@@ -201,12 +201,14 @@ class CriterionIn(BaseModel):
 class MeetingIn(BaseModel):
     group_id: str
     title: str
+    hijri_month: Optional[str] = ""  # مثال: "محرم48"
     day_of_week: Optional[str] = ""
     date_hijri: Optional[str] = ""
     date_gregorian: Optional[str] = ""  # ISO date string
     location: Optional[str] = ""
     presenter: Optional[str] = ""
-    presentation_type: Optional[str] = ""  # محاضرة، ورشة، نقاش، درس
+    presentation_type: Optional[str] = ""  # محاضرة، ورشة، نقاش، درس، أخرى
+    presentation_type_other: Optional[str] = ""  # عند اختيار "أخرى"
     domain_id: Optional[str] = None
     competency_id: Optional[str] = None
     criterion_ids: List[str] = []
@@ -686,7 +688,56 @@ async def report_summary(group_id: Optional[str] = None, user: dict = Depends(ge
     }
 
 
-@api.get("/reports/export.csv")
+@api.get("/reports/by-month")
+async def report_by_month(month: str, user: dict = Depends(get_current_user)):
+    # For a specific hijri month, list which groups executed a meeting and which did not
+    q = {"hijri_month": month}
+    if user["role"] == "manager":
+        q_scope = {"$in": user.get("managed_group_ids", [])}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q_scope = gid if gid else "__none__"
+    else:
+        q_scope = None
+    if q_scope is not None:
+        q["group_id"] = q_scope
+
+    meetings = await db.meetings.find(q, {"_id": 0}).to_list(2000)
+    executed_gids = {m["group_id"] for m in meetings if m.get("executed")}
+    all_gids = {m["group_id"] for m in meetings}
+
+    group_q = {}
+    if user["role"] == "manager":
+        group_q = {"id": {"$in": user.get("managed_group_ids", [])}}
+    elif user["role"] == "member":
+        group_q = {"id": user.get("group_id") or "__none__"}
+    groups = await db.groups.find(group_q, {"_id": 0}).to_list(1000)
+
+    result = []
+    for g in groups:
+        status = "executed" if g["id"] in executed_gids else ("planned" if g["id"] in all_gids else "missing")
+        result.append({"group_id": g["id"], "group_name": g["name"], "status": status})
+    return {"month": month, "groups": result, "meetings": meetings}
+
+
+@api.get("/reports/months")
+async def report_months(user: dict = Depends(get_current_user)):
+    q = {}
+    if user["role"] == "manager":
+        q["group_id"] = {"$in": user.get("managed_group_ids", [])}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q["group_id"] = gid if gid else "__none__"
+    meetings = await db.meetings.find(q, {"_id": 0, "hijri_month": 1, "executed": 1, "group_id": 1}).to_list(5000)
+    counts = {}
+    for m in meetings:
+        key = m.get("hijri_month") or "غير محدد"
+        if key not in counts:
+            counts[key] = {"month": key, "total": 0, "executed": 0}
+        counts[key]["total"] += 1
+        if m.get("executed"):
+            counts[key]["executed"] += 1
+    return list(counts.values())
 async def export_csv(group_id: Optional[str] = None, user: dict = Depends(get_current_user)):
     q = {}
     if group_id:

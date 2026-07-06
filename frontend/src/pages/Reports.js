@@ -6,10 +6,13 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
+    Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
     BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line,
 } from "recharts";
-import { Printer, Download } from "lucide-react";
+import { Printer, Download, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 const COLORS = ["#2A5C43", "#D4A373", "#8A9A5B", "#E6CCB2", "#7E6B5A"];
 
@@ -17,6 +20,8 @@ export default function Reports() {
     const [groups, setGroups] = useState([]);
     const [groupId, setGroupId] = useState("all");
     const [data, setData] = useState(null);
+    const [months, setMonths] = useState([]);
+    const [monthDetail, setMonthDetail] = useState(null);
 
     const load = async () => {
         const g = await api.get("/groups");
@@ -24,6 +29,13 @@ export default function Reports() {
         const url = groupId && groupId !== "all" ? `/reports/summary?group_id=${groupId}` : "/reports/summary";
         const r = await api.get(url);
         setData(r.data);
+        const mr = await api.get("/reports/months");
+        setMonths(mr.data.sort((a, b) => (a.month || "").localeCompare(b.month || "")));
+    };
+
+    const openMonth = async (month) => {
+        const r = await api.get(`/reports/by-month?month=${encodeURIComponent(month)}`);
+        setMonthDetail(r.data);
     };
 
     useEffect(() => { load(); /* eslint-disable-next-line */ }, [groupId]);
@@ -134,6 +146,53 @@ export default function Reports() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Card>
+                <CardHeader><CardTitle>اللقاءات حسب الشهر الهجري</CardTitle></CardHeader>
+                <CardContent>
+                    {months.length === 0 ? (
+                        <div className="text-center py-6 text-muted-foreground">لا توجد بيانات</div>
+                    ) : (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+                            {months.map((m) => (
+                                <button
+                                    key={m.month}
+                                    onClick={() => openMonth(m.month)}
+                                    className="text-right border rounded-lg p-3 hover:border-primary hover:bg-primary/5 transition-all"
+                                    data-testid={`month-card-${m.month}`}
+                                >
+                                    <div className="font-bold">{m.month}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                        {m.executed}/{m.total} منفذة
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Dialog open={!!monthDetail} onOpenChange={(v) => !v && setMonthDetail(null)}>
+                <DialogContent dir="rtl" className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                    <DialogHeader><DialogTitle>تفاصيل شهر {monthDetail?.month}</DialogTitle></DialogHeader>
+                    {monthDetail && (
+                        <div className="space-y-2">
+                            {monthDetail.groups.map((g) => (
+                                <div key={g.group_id} className="flex items-center justify-between border rounded-md p-3">
+                                    <span className="font-medium">{g.group_name}</span>
+                                    {g.status === "executed" ? (
+                                        <span className="flex items-center gap-1 text-primary text-sm"><CheckCircle2 className="w-4 h-4" /> نفّذت اللقاء</span>
+                                    ) : g.status === "planned" ? (
+                                        <span className="flex items-center gap-1 text-yellow-600 text-sm"><Clock className="w-4 h-4" /> مخطط لم يُنفذ</span>
+                                    ) : (
+                                        <span className="flex items-center gap-1 text-destructive text-sm"><XCircle className="w-4 h-4" /> لم يُسجَّل لقاء</span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
