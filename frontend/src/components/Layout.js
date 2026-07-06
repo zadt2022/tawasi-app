@@ -24,17 +24,18 @@ const navItems = [
 ];
 
 export default function Layout() {
-    const { user, logout, isAdmin } = useAuth();
+    const { user, logout, isAdmin, can } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const [open, setOpen] = useState(false);
 
-    // Close sidebar automatically when route changes (mobile UX)
-    useEffect(() => {
-        setOpen(false);
-    }, [location.pathname]);
+    useEffect(() => { setOpen(false); }, [location.pathname]);
 
     const roleLabel = { admin: "مشرف عام", manager: "مدير مجموعة", member: "عضو" }[user?.role] || "";
+    const allowedNav = navItems.filter((it) => {
+        const key = it.to.replace("/", "");
+        return can(key);
+    });
 
     return (
         <div className="min-h-screen bg-background text-foreground">
@@ -113,7 +114,7 @@ export default function Layout() {
                 </div>
 
                 <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    {navItems.map((it) => (
+                    {allowedNav.map((it) => (
                         <NavLink
                             key={it.to}
                             to={it.to}
@@ -131,6 +132,7 @@ export default function Layout() {
                         </NavLink>
                     ))}
                     {isAdmin && (
+                        <>
                         <NavLink
                             to="/users"
                             data-testid="nav-users"
@@ -145,6 +147,21 @@ export default function Layout() {
                             <UserCog className="w-4 h-4" />
                             <span>المستخدمون</span>
                         </NavLink>
+                        <NavLink
+                            to="/permissions"
+                            data-testid="nav-permissions"
+                            className={({ isActive }) =>
+                                `flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200 ${
+                                    isActive
+                                        ? "bg-primary text-primary-foreground font-medium"
+                                        : "text-foreground hover:bg-muted"
+                                }`
+                            }
+                        >
+                            <ShieldCheck className="w-4 h-4" />
+                            <span>الصلاحيات</span>
+                        </NavLink>
+                        </>
                     )}
                 </nav>
 

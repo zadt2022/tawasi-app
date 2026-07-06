@@ -134,13 +134,40 @@ class UserCreate(BaseModel):
     name: str
     role: str = Field(pattern="^(admin|manager|member)$")
     managed_group_ids: List[str] = []
+    group_id: Optional[str] = None  # للعضو: مجموعته الوحيدة
 
 
 class UserUpdate(BaseModel):
     name: Optional[str] = None
     role: Optional[str] = Field(default=None, pattern="^(admin|manager|member)$")
     managed_group_ids: Optional[List[str]] = None
+    group_id: Optional[str] = None
     password: Optional[str] = None
+
+
+DEFAULT_PERMISSIONS = {
+    "manager": {
+        "dashboard": True, "groups": True, "meetings": True,
+        "domains": True, "reports": True,
+    },
+    "member": {
+        "dashboard": True, "groups": True, "meetings": True,
+        "domains": False, "reports": True,
+    },
+}
+
+
+class PermissionsIn(BaseModel):
+    manager: Dict[str, bool]
+    member: Dict[str, bool]
+
+
+async def get_permissions() -> Dict[str, Dict[str, bool]]:
+    doc = await db.settings.find_one({"key": "role_permissions"})
+    if not doc:
+        return DEFAULT_PERMISSIONS
+    return {"manager": doc.get("manager", DEFAULT_PERMISSIONS["manager"]),
+            "member": doc.get("member", DEFAULT_PERMISSIONS["member"])}
 
 
 class GroupIn(BaseModel):
@@ -228,7 +255,27 @@ async def logout(response: Response):
 
 @api.get("/auth/me")
 async def me(user: dict = Depends(get_current_user)):
+    perms = await get_permissions()
+    role = user.get("role")
+    user["permissions"] = perms.get(role, {}) if role in ("manager", "member") else {
+        "dashboard": True, "groups": True, "meetings": True, "domains": True, "reports": True,
+    }
     return user
+
+
+@api.get("/permissions")
+async def read_permissions(_: dict = Depends(require_roles("admin"))):
+    return await get_permissions()
+
+
+@api.put("/permissions")
+async def update_permissions(payload: PermissionsIn, _: dict = Depends(require_roles("admin"))):
+    await db.settings.update_one(
+        {"key": "role_permissions"},
+        {"$set": {"key": "role_permissions", "manager": payload.manager, "member": payload.member}},
+        upsert=True,
+    )
+    return await get_permissions()
 
 
 # ---------- Users Management (admin only) ----------
@@ -249,6 +296,7 @@ async def create_user(payload: UserCreate, _: dict = Depends(require_roles("admi
         "name": payload.name,
         "role": payload.role,
         "managed_group_ids": payload.managed_group_ids,
+        "group_id": payload.group_id,
         "password_hash": hash_password(payload.password),
         "created_at": now_iso(),
     }
@@ -265,6 +313,8 @@ async def update_user(user_id: str, payload: UserUpdate, _: dict = Depends(requi
         upd["role"] = payload.role
     if payload.managed_group_ids is not None:
         upd["managed_group_ids"] = payload.managed_group_ids
+    if payload.group_id is not None:
+        upd["group_id"] = payload.group_id or None
     if payload.password:
         upd["password_hash"] = hash_password(payload.password)
     if not upd:
@@ -290,6 +340,9 @@ async def list_groups(user: dict = Depends(get_current_user)):
     q = {}
     if user["role"] == "manager":
         q = {"id": {"$in": user.get("managed_group_ids", [])}}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q = {"id": gid} if gid else {"id": "__none__"}
     groups = await db.groups.find(q, {"_id": 0}).to_list(1000)
     # attach member count
     for g in groups:
@@ -473,6 +526,9 @@ async def list_meetings(group_id: Optional[str] = None, user: dict = Depends(get
         q["group_id"] = group_id
     if user["role"] == "manager":
         q["group_id"] = {"$in": user.get("managed_group_ids", [])}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q["group_id"] = gid if gid else "__none__"
     meetings = await db.meetings.find(q, {"_id": 0}).sort("date_gregorian", -1).to_list(2000)
     return meetings
 
@@ -554,6 +610,9 @@ async def report_summary(group_id: Optional[str] = None, user: dict = Depends(ge
         q["group_id"] = group_id
     if user["role"] == "manager":
         q["group_id"] = {"$in": user.get("managed_group_ids", [])}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q["group_id"] = gid if gid else "__none__"
 
     meetings = await db.meetings.find(q, {"_id": 0}).to_list(5000)
     meeting_ids = [m["id"] for m in meetings]
@@ -634,6 +693,9 @@ async def export_csv(group_id: Optional[str] = None, user: dict = Depends(get_cu
         q["group_id"] = group_id
     if user["role"] == "manager":
         q["group_id"] = {"$in": user.get("managed_group_ids", [])}
+    elif user["role"] == "member":
+        gid = user.get("group_id")
+        q["group_id"] = gid if gid else "__none__"
     meetings = await db.meetings.find(q, {"_id": 0}).to_list(5000)
     groups = await db.groups.find({}, {"_id": 0}).to_list(1000)
     gmap = {g["id"]: g["name"] for g in groups}

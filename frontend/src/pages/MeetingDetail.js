@@ -40,6 +40,10 @@ export default function MeetingDetail() {
         const mem = await api.get(`/groups/${m.data.group_id}/members`);
         setMembers(mem.data);
         const map = {};
+        // Default: all members are present unless explicitly recorded as absent
+        for (const memberRow of mem.data) {
+            map[memberRow.id] = { attended: true, prepared: false, evaluations: {}, notes: "" };
+        }
         for (const a of m.data.attendances || []) {
             map[a.member_id] = { attended: !!a.attended, prepared: !!a.prepared, evaluations: a.evaluations || {}, notes: a.notes || "" };
         }
@@ -143,6 +147,12 @@ export default function MeetingDetail() {
             <Card>
                 <CardHeader><CardTitle>تحضير الأفراد ({members.length})</CardTitle></CardHeader>
                 <CardContent className="p-0">
+                    {canEdit && members.length > 0 && (
+                        <div className="p-4 bg-primary/5 border-b text-sm text-primary flex items-center gap-2">
+                            <span className="font-medium">تنبيه:</span>
+                            <span>الحالة الافتراضية لجميع الأفراد هي «حضر». أطفئ مفتاح الحضور للغائبين فقط ثم اضغط «حفظ جميع التحضير».</span>
+                        </div>
+                    )}
                     {members.length === 0 ? (
                         <div className="p-6 text-center text-muted-foreground">لا يوجد أعضاء في هذه المجموعة</div>
                     ) : (

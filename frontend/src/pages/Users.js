@@ -22,32 +22,36 @@ const ROLES = [
     { value: "member", label: "عضو" },
 ];
 
-const emptyForm = { email: "", password: "", name: "", role: "manager" };
+const emptyForm = { email: "", password: "", name: "", role: "manager", group_id: "" };
 
 export default function Users() {
     const [users, setUsers] = useState([]);
+    const [groups, setGroups] = useState([]);
     const [open, setOpen] = useState(false);
     const [editing, setEditing] = useState(null);
     const [form, setForm] = useState(emptyForm);
 
-    const load = async () => setUsers((await api.get("/users")).data);
+    const load = async () => {
+        setUsers((await api.get("/users")).data);
+        setGroups((await api.get("/groups")).data);
+    };
     useEffect(() => { load(); }, []);
 
     const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
     const openEdit = (u) => {
         setEditing(u);
-        setForm({ email: u.email, password: "", name: u.name, role: u.role });
+        setForm({ email: u.email, password: "", name: u.name, role: u.role, group_id: u.group_id || "" });
         setOpen(true);
     };
 
     const save = async () => {
         try {
             if (editing) {
-                const payload = { name: form.name, role: form.role };
+                const payload = { name: form.name, role: form.role, group_id: form.group_id || null };
                 if (form.password) payload.password = form.password;
                 await api.patch(`/users/${editing.id}`, payload);
             } else {
-                await api.post("/users", form);
+                await api.post("/users", { ...form, group_id: form.group_id || null });
             }
             toast.success("تم الحفظ");
             setOpen(false); load();
@@ -115,6 +119,18 @@ export default function Users() {
                                 <SelectContent>{ROLES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
+                        {form.role === "member" && (
+                            <div className="space-y-2">
+                                <Label>المجموعة</Label>
+                                <Select value={form.group_id || "none"} onValueChange={(v) => setForm({ ...form, group_id: v === "none" ? "" : v })}>
+                                    <SelectTrigger data-testid="user-group-select"><SelectValue placeholder="اختر مجموعة" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="none">—</SelectItem>
+                                        {groups.map((g) => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setOpen(false)}>إلغاء</Button>

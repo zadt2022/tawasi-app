@@ -11,6 +11,7 @@ import MeetingDetail from "@/pages/MeetingDetail";
 import Domains from "@/pages/Domains";
 import Reports from "@/pages/Reports";
 import Users from "@/pages/Users";
+import Permissions from "@/pages/Permissions";
 import "@/App.css";
 
 function Protected({ children, adminOnly }) {
@@ -50,6 +51,14 @@ function AppRoutes() {
                     element={
                         <Protected adminOnly>
                             <Users />
+                        </Protected>
+                    }
+                />
+                <Route
+                    path="/permissions"
+                    element={
+                        <Protected adminOnly>
+                            <Permissions />
                         </Protected>
                     }
                 />
