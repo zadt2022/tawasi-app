@@ -174,7 +174,9 @@ export default function MeetingDetail() {
                                         const cur = attMap[mem.id] || { attended: false, prepared: false, evaluations: {} };
                                         return (
                                             <TableRow key={mem.id} data-testid={`att-row-${mem.id}`}>
-                                                <TableCell className="font-medium sticky right-0 bg-white z-10">{mem.name}</TableCell>
+                                                <TableCell className="font-medium sticky right-0 bg-white z-10">
+                                                    <Link to={`/members/${mem.id}`} className="text-primary hover:underline">{mem.name}</Link>
+                                                </TableCell>
                                                 <TableCell className="text-center">
                                                     <Switch
                                                         checked={cur.attended}

@@ -114,7 +114,9 @@ export default function GroupDetail() {
                                     <TableBody>
                                         {members.map((m) => (
                                             <TableRow key={m.id} data-testid={`member-row-${m.id}`}>
-                                                <TableCell className="font-medium">{m.name}</TableCell>
+                                                <TableCell className="font-medium">
+                                                    <Link to={`/members/${m.id}`} className="text-primary hover:underline" data-testid={`open-member-${m.id}`}>{m.name}</Link>
+                                                </TableCell>
                                                 <TableCell dir="ltr" className="text-right">{m.phone}</TableCell>
                                                 <TableCell className="text-muted-foreground">{m.notes}</TableCell>
                                                 {canEdit && (

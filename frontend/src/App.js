@@ -12,6 +12,7 @@ import Domains from "@/pages/Domains";
 import Reports from "@/pages/Reports";
 import Users from "@/pages/Users";
 import Permissions from "@/pages/Permissions";
+import MemberProfile from "@/pages/MemberProfile";
 import "@/App.css";
 
 function Protected({ children, adminOnly }) {
@@ -44,6 +45,7 @@ function AppRoutes() {
                 <Route path="/groups/:id" element={<GroupDetail />} />
                 <Route path="/meetings" element={<Meetings />} />
                 <Route path="/meetings/:id" element={<MeetingDetail />} />
+                <Route path="/members/:id" element={<MemberProfile />} />
                 <Route path="/domains" element={<Domains />} />
                 <Route path="/reports" element={<Reports />} />
                 <Route

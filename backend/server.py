@@ -636,6 +636,75 @@ async def upsert_attendance(meeting_id: str, payload: AttendanceIn, user: dict =
 
 
 # ---------- Reports ----------
+@api.get("/members/{member_id}/profile")
+async def member_profile(member_id: str, user: dict = Depends(get_current_user)):
+    m = await db.members.find_one({"id": member_id}, {"_id": 0})
+    if not m:
+        raise HTTPException(status_code=404, detail="العضو غير موجود")
+    # Access: admin all, manager if group in managed, member if it's their group
+    if user["role"] == "manager" and m["group_id"] not in user.get("managed_group_ids", []):
+        raise HTTPException(status_code=403, detail="لا تملك الصلاحية")
+    if user["role"] == "member" and m["group_id"] != user.get("group_id"):
+        raise HTTPException(status_code=403, detail="لا تملك الصلاحية")
+
+    group = await db.groups.find_one({"id": m["group_id"]}, {"_id": 0})
+    atts = await db.attendances.find({"member_id": member_id}, {"_id": 0}).to_list(2000)
+    meeting_ids = [a["meeting_id"] for a in atts]
+    meetings = await db.meetings.find({"id": {"$in": meeting_ids}}, {"_id": 0}).to_list(2000)
+    mmap = {mt["id"]: mt for mt in meetings}
+
+    criteria = await db.criteria.find({}, {"_id": 0}).to_list(2000)
+    comps = await db.competencies.find({}, {"_id": 0}).to_list(2000)
+    crit_map = {c["id"]: c for c in criteria}
+    comp_map = {c["id"]: c["name"] for c in comps}
+
+    level_score = {"high": 100, "medium": 66, "low": 33, "absent": 0}
+    history = []
+    comp_totals = {}
+    attended_count = 0
+    prepared_count = 0
+    for a in atts:
+        mt = mmap.get(a["meeting_id"])
+        if not mt:
+            continue
+        if a.get("attended"):
+            attended_count += 1
+        if a.get("prepared"):
+            prepared_count += 1
+        for cid, level in (a.get("evaluations") or {}).items():
+            crit = crit_map.get(cid)
+            if not crit:
+                continue
+            cn = comp_map.get(crit["competency_id"], "غير معروف")
+            comp_totals.setdefault(cn, []).append(level_score.get(level, 0))
+        history.append({
+            "meeting_id": mt["id"],
+            "title": mt.get("title"),
+            "hijri_month": mt.get("hijri_month"),
+            "date_hijri": mt.get("date_hijri"),
+            "attended": a.get("attended", False),
+            "prepared": a.get("prepared", False),
+            "evaluations": a.get("evaluations", {}),
+        })
+    history.sort(key=lambda x: x.get("hijri_month") or "")
+    competency_averages = [
+        {"name": k, "value": round(sum(v) / len(v), 1) if v else 0}
+        for k, v in comp_totals.items()
+    ]
+    return {
+        "member": m,
+        "group": group,
+        "totals": {
+            "meetings_recorded": len(history),
+            "attended": attended_count,
+            "prepared": prepared_count,
+            "attendance_rate": round(100 * attended_count / len(history), 1) if history else 0,
+        },
+        "history": history,
+        "competency_averages": competency_averages,
+    }
+
+
 @api.get("/reports/summary")
 async def report_summary(group_id: Optional[str] = None, user: dict = Depends(get_current_user)):
     q = {}

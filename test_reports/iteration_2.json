@@ -1,0 +1,26 @@
+{
+  "summary": "Backend testing for new GET /api/members/{member_id}/profile endpoint plus regression on core endpoints. 26/26 checks passed.",
+  "tested_scope": ["backend", "auth", "integration"],
+  "passed": [
+    "admin login (POST /api/auth/login returns token)",
+    "Regression: GET /api/groups, GET /api/meetings, GET /api/reports/summary (200)",
+    "Created group A, group B, 2 members in A, 1 member in B",
+    "Created domain -> competency -> criterion",
+    "Created meeting in group A with criterion_ids",
+    "Recorded attendance for member1 (attended=true, prepared=true, evaluations={crit:high})",
+    "GET profile member1: totals.meetings_recorded=1, attended=1, prepared=1, history length=1, competency_averages length>=1",
+    "GET profile member2 (no attendance): 200 with totals zeros, attendance_rate=0, history=[]",
+    "POST /api/users with role=member and group_id auto-created corresponding member record in group",
+    "Manager (managed_group_ids=[A]) accessing group A member profile -> 200",
+    "Manager accessing group B member profile -> 403",
+    "Member user (group_id=A) accessing group A member profile -> 200",
+    "Member user accessing group B member profile -> 403",
+    "GET profile with unknown member id -> 404"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "not_tested"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Frontend testing skipped per request. Login response uses 'token' field (also aliased test used both 'access_token' and 'token' for safety). Test script at /app/tests/test_member_profile.py."
+}
