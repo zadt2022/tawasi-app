@@ -53,10 +53,8 @@ export default function Layout() {
                             <Menu className="w-5 h-5" />
                         </Button>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-                                <ShieldCheck className="w-4 h-4" />
-                            </div>
-                            <div className="font-bold text-base leading-tight">نظام اللقاءات</div>
+                            <img src="/logo.png" alt="مشروع تواصي" className="w-9 h-9 object-contain" />
+                            <div className="font-bold text-base leading-tight">مشروع تواصي</div>
                         </div>
                     </div>
                     <div className="hidden sm:flex items-center gap-3 text-sm">
@@ -94,12 +92,10 @@ export default function Layout() {
             >
                 <div className="p-5 border-b border-border flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-primary text-primary-foreground grid place-items-center">
-                            <ShieldCheck className="w-5 h-5" />
-                        </div>
+                        <img src="/logo.png" alt="مشروع تواصي" className="w-11 h-11 object-contain" />
                         <div>
-                            <div className="font-bold text-lg leading-tight">نظام اللقاءات</div>
-                            <div className="text-xs text-muted-foreground">تنظيم المجموعات</div>
+                            <div className="font-bold text-lg leading-tight">مشروع تواصي</div>
+                            <div className="text-xs text-muted-foreground">إدارة المجموعات واللقاءات</div>
                         </div>
                     </div>
                     <Button

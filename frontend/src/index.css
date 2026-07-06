@@ -14,31 +14,31 @@ html, body {
 
 @layer base {
     :root {
-        /* Organic & Earthy — Forest Green primary */
-        --background: 60 20% 98%;      /* #FBFBF9 */
-        --foreground: 24 10% 10%;      /* #1C1917 */
+        /* Brand: Gold + Teal + Green (from logo) on warm neutral */
+        --background: 45 30% 98%;      /* #FDFBF6 warm off-white */
+        --foreground: 200 20% 12%;     /* deep slate */
         --card: 0 0% 100%;
-        --card-foreground: 24 10% 10%;
+        --card-foreground: 200 20% 12%;
         --popover: 0 0% 100%;
-        --popover-foreground: 24 10% 10%;
-        --primary: 148 37% 26%;        /* #2A5C43 */
-        --primary-foreground: 60 20% 98%;
-        --secondary: 30 45% 64%;       /* #D4A373 */
-        --secondary-foreground: 24 10% 10%;
-        --muted: 30 15% 94%;
-        --muted-foreground: 25 10% 40%;
-        --accent: 74 25% 48%;          /* #8A9A5B */
-        --accent-foreground: 60 20% 98%;
-        --destructive: 0 84% 60%;
+        --popover-foreground: 200 20% 12%;
+        --primary: 180 65% 26%;        /* #0F766E teal */
+        --primary-foreground: 45 30% 98%;
+        --secondary: 44 62% 52%;       /* #D4AF37 gold */
+        --secondary-foreground: 200 20% 12%;
+        --muted: 44 30% 94%;
+        --muted-foreground: 200 12% 40%;
+        --accent: 145 45% 38%;         /* forest green */
+        --accent-foreground: 45 30% 98%;
+        --destructive: 0 84% 55%;
         --destructive-foreground: 0 0% 98%;
-        --border: 30 12% 90%;
-        --input: 30 12% 90%;
-        --ring: 148 37% 26%;
-        --chart-1: 148 37% 26%;
-        --chart-2: 30 45% 64%;
-        --chart-3: 74 25% 48%;
-        --chart-4: 28 35% 78%;
-        --chart-5: 28 12% 43%;
+        --border: 44 20% 88%;
+        --input: 44 20% 88%;
+        --ring: 180 65% 26%;
+        --chart-1: 180 65% 26%;
+        --chart-2: 44 62% 52%;
+        --chart-3: 145 45% 38%;
+        --chart-4: 44 45% 78%;
+        --chart-5: 200 20% 45%;
         --radius: 0.6rem;
     }
 }

@@ -304,6 +304,19 @@ async def create_user(payload: UserCreate, _: dict = Depends(require_roles("admi
         "created_at": now_iso(),
     }
     await db.users.insert_one(doc)
+    # If member role with group, auto-create a corresponding member record in that group
+    if payload.role == "member" and payload.group_id:
+        existing_mem = await db.members.find_one({"group_id": payload.group_id, "user_id": doc["id"]})
+        if not existing_mem:
+            await db.members.insert_one({
+                "id": new_id(),
+                "group_id": payload.group_id,
+                "user_id": doc["id"],
+                "name": payload.name,
+                "phone": "",
+                "notes": "",
+                "created_at": now_iso(),
+            })
     return strip_password(doc)
 
 
@@ -326,6 +339,23 @@ async def update_user(user_id: str, payload: UserUpdate, _: dict = Depends(requi
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="المستخدم غير موجود")
     user = await db.users.find_one({"id": user_id})
+    # Sync member record if user is a member with a group
+    if user and user.get("role") == "member" and user.get("group_id"):
+        existing_mem = await db.members.find_one({"user_id": user_id})
+        if not existing_mem:
+            await db.members.insert_one({
+                "id": new_id(),
+                "group_id": user["group_id"],
+                "user_id": user_id,
+                "name": user["name"],
+                "phone": "",
+                "notes": "",
+                "created_at": now_iso(),
+            })
+        else:
+            new_group = user["group_id"]
+            member_upd = {"name": user["name"], "group_id": new_group}
+            await db.members.update_one({"user_id": user_id}, {"$set": member_upd})
     return strip_password(user)
 
 

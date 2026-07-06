@@ -44,13 +44,11 @@ export default function Login() {
                     }}
                 />
                 <div className="relative z-10 max-w-md">
-                    <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur grid place-items-center mb-8">
-                        <ShieldCheck className="w-7 h-7" />
-                    </div>
+                    <img src="/logo.png" alt="شعار" className="w-24 h-24 mb-8 object-contain bg-white/10 rounded-2xl p-2 backdrop-blur" />
                     <h1 className="text-arabic-hero text-4xl md:text-5xl mb-4">
-                        نظام إدارة اللقاءات
+                        مشروع تواصي
                     </h1>
-                    <p className="text-lg text-primary-foreground/80 leading-relaxed">
+                    <p className="text-lg text-primary-foreground/85 leading-relaxed">
                         نظِّم مجموعاتك، تابع لقاءاتك الشهرية، وقس تحقق الكفايات
                         من خلال لوحة تقارير تفاعلية.
                     </p>

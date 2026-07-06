@@ -1,0 +1,19 @@
+{
+  "summary": "Backend-only verification of the members-sync bug fix in POST/PATCH /api/users. All 4 requested scenarios passed: user creation auto-adds a member record, PATCH updates the member name, existing endpoints still return 200, and manager (no group_id) does NOT create a member record.",
+  "tested_scope": ["backend", "integration"],
+  "passed": [
+    "POST /api/auth/login -> 200, token returned",
+    "GET /api/auth/me -> 200 with admin identity",
+    "POST /api/groups -> 200, created group 'مجموعة الاختبار <ts>'",
+    "POST /api/users (role=member, group_id=<gid>) -> 200; NEW member record present in GET /api/groups/{gid}/members with matching name 'عضو اختبار' and user_id === created user's id",
+    "PATCH /api/users/{id} {name:'الاسم الجديد'} -> 200; GET /api/groups/{gid}/members reflects updated name for the same member record id",
+    "Regression: GET /api/groups 200, GET /api/reports/summary 200, POST /api/meetings 200",
+    "Sanity: POST /api/users (role=manager, no group_id) -> 200 and NO member record created in any of the 4 groups"
+  ],
+  "failed": [],
+  "action_items": [],
+  "success_rate": {"backend": "100%", "frontend": "not_tested"},
+  "retest_needed": false,
+  "full_testing_deferred": true,
+  "notes": "Login response field is 'token' (not 'access_token'). All calls used Authorization: Bearer <token> against REACT_APP_BACKEND_URL/api. Group id used for primary test: f002d2c8-cd3f-4271-9f67-b50dc6870c57; new member user id: 1ea6fb94-871b-47f4-8d60-f6db70714485; member record id: f37b7ea3-7b35-48f6-9318-2d52c4c083e1."
+}
