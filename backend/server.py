@@ -228,11 +228,19 @@ class AttendanceIn(BaseModel):
 
 # ---------- Auth Endpoints ----------
 def set_auth_cookie(response: Response, token: str):
+    """Set the access_token cookie.
+
+    For development it's often inconvenient to use secure cookies (requires HTTPS). To allow
+    using insecure cookies locally, set the environment variable DEV_INSECURE_COOKIES=true
+    (for example in backend/.env). In production keep this unset or false so secure=True is used.
+    """
+    # If DEV_INSECURE_COOKIES is true, we will set secure=False to allow cookies over HTTP
+    dev_insecure = os.environ.get("DEV_INSECURE_COOKIES", "").lower() in ("1", "true", "yes")
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=True,
+        secure=not dev_insecure,
         samesite="none",
         max_age=12 * 3600,
         path="/",
